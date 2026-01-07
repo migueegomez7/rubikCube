@@ -61,11 +61,6 @@ function crearEscena() {
     //Crea el controlador de la cámara que permite girar la cámara alrededor del cubo en tres dimensiones y lo añade a la escena
     controlador_camara = new OrbitControls(camara, renderer.domElement);
     controlador_camara.target.set(0, 0, 0);
-    //Configura OrbitControls para que solo responda a dos toques (pellizcar y rotar con dos dedos)
-    controlador_camara.touches = {
-        ONE: -1,  // Desactiva rotación con un solo dedo
-        TWO: THREE.TOUCH.DOLLY_PAN  // Mantiene pellizcar y pan con dos dedos
-    };
 
     //Crea el raycaster que permite detectar colisiones y lo añade a la escena
     raycaster = new THREE.Raycaster();
@@ -211,6 +206,11 @@ function onTouchMove(event) {
 
 function onMouseDown(event) {
     if (isRotating) return;  //Evita iniciar otro giro mientras ya se está girando una capa
+
+    //Si es un evento táctil con más de un toque, permite que OrbitControls lo maneje
+    if (event.touches && event.touches.length > 1) {
+        return;
+    }
 
     //Calcula la posición del ratón en coordenadas normalizadas del dispositivo.
     //Navegador (píxeles) vs Three.js (NDC):
@@ -611,8 +611,8 @@ function createControlPanel() {
     controlsContent.innerHTML = `
         <div style="margin-bottom: 15px;">
             <div style="margin-left: 10px; margin-top: 8px;">
-                <div><span style="color: #a78bfa;">${isMobile ? 'Tocar y Arrastrar' : 'Clic y Arrastrar'}</span> - Rotar capa</div>
-                <div><span style="color: #a78bfa;">${isMobile ? 'Dos dedos y Arrastrar' : 'Clic Derecho y Arrastrar'}</span> - Orbitar cámara</div>
+                <div><span style="color: #a78bfa;">${isMobile ? '1 dedo en cubo' : 'Clic y Arrastrar'}</span> - Rotar capa</div>
+                <div><span style="color: #a78bfa;">${isMobile ? '1-2 dedos en fondo' : 'Clic Derecho y Arrastrar'}</span> - Orbitar cámara</div>
                 <div><span style="color: #a78bfa;">${isMobile ? 'Pellizcar' : 'Rueda del ratón'}</span> - Acercar/Alejar</div>
             </div>
         </div>
