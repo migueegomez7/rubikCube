@@ -135,27 +135,27 @@ function pintaCaras(x, y, z) {
 
 function addTextureToCenterCube(cube, x, y, z) {
     const textureLoader = new THREE.TextureLoader();
-    let logo = 'assets/logo_black.png';
+    let logo = './assets/logo_black.png';
     let faceIndex = -1;
 
     //Comprueba que cara es para añadir el logo del color correspondiente como material.
     if (x === 1) {
-        logo = 'assets/logo_red.png';
+        logo = './assets/logo_red.png';
         faceIndex = 0;
     } else if (x === -1) {
-        logo = 'assets/logo_orange.png';
+        logo = './assets/logo_orange.png';
         faceIndex = 1;
     } else if (y === 1) {
-        logo = 'assets/logo_yellow.png';
+        logo = './assets/logo_yellow.png';
         faceIndex = 2;
     } else if (y === -1) {
-        logo = 'assets/logo_white.png';
+        logo = './assets/logo_white.png';
         faceIndex = 3;
     } else if (z === 1) {
-        logo = 'assets/logo_green.png';
+        logo = './assets/logo_green.png';
         faceIndex = 4;
     } else if (z === -1) {
-        logo = 'assets/logo_blue.png';
+        logo = './assets/logo_blue.png';
         faceIndex = 5;
     };
 
