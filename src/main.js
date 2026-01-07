@@ -80,7 +80,7 @@ function crearCubitos(escena) {
     let cubito, centro;
 
     rubiksCube = new THREE.Group();
-    //Utilizo tres bucles for para crear los 27 (26 cubitos + la esfera) cubitos del cubo de rubik usando coordenadas x,y,z que van de -1 a 1
+    //Utiliza tres bucles for para crear los 27 (26 cubitos + la esfera) cubitos del cubo de rubik usando coordenadas x,y,z que van de -1 a 1
     for (let x = -1; x <= 1; x++) {
         for (let y = -1; y <= 1; y++) {
             for (let z = -1; z <= 1; z++) {
@@ -259,47 +259,40 @@ function processDrag(cube, dragDelta, faceNormal, intersectionPoint) {
 
     let axis, layer;
 
-    //El eje de rotación es perpendicular a la normal de la cara.
-    //Si hicimos clic en una cara alineada con X (izquierda/derecha), NO rotamos alrededor de X.
-    //En su lugar elegimos el eje en función de la dirección del arrastre en esa cara.
     if (absX > absY && absX > absZ) {
-        //Pulso en cara izquierda o derecha (normal en X)
-        //El eje de rotación depende de la dirección del arrastre (Y o Z)
-        //Determina si rotar alrededor de Y o Z según la dirección del arrastre
+
         if (Math.abs(dragDelta.y) > Math.abs(dragDelta.x)) {
             //Arrastre vertical -> rotar alrededor de Z
             axis = 'z';
-            layer = cubePos.z;  //Layer is the Z-position of the clicked cube
+            layer = cubePos.z;
         } else {
             //Arrastre horizontal -> rotar alrededor de Y
             axis = 'y';
-            layer = cubePos.y;  //Layer is the Y-position of the clicked cube
+            layer = cubePos.y;
         }
     } else if (absY > absX && absY > absZ) {
-        //Pulso en cara superior o inferior (normal en Y)
         if (Math.abs(dragDelta.y) > Math.abs(dragDelta.x)) {
             //Arrastre vertical -> rotar alrededor de X
             axis = 'x';
-            layer = cubePos.x;  //Layer is the X-position of the clicked cube
+            layer = cubePos.x;
         } else {
             //Arrastre horizontal -> rotar alrededor de Z
             axis = 'z';
-            layer = cubePos.z;  //Layer is the Z-position of the clicked cube
+            layer = cubePos.z;
         }
     } else {
-        //Pulso en cara frontal o trasera (normal en Z)
         if (Math.abs(dragDelta.y) > Math.abs(dragDelta.x)) {
             //Arrastre vertical -> rotar alrededor de X
             axis = 'x';
-            layer = cubePos.x;  //Layer is the X-position of the clicked cube
+            layer = cubePos.x;
         } else {
             //Arrastre horizontal -> rotar alrededor de Y
             axis = 'y';
-            layer = cubePos.y;  //Layer is the Y-position of the clicked cube
+            layer = cubePos.y;
         }
     }
 
-    //Ahora determina la dirección de rotación usando matemática 3D
+    //Determina la dirección de rotación usando matemática 3D
     //Obtiene los vectores "right" y "up" de la cámara en espacio mundial
     const cameraRight = new THREE.Vector3();
     const cameraUp = new THREE.Vector3();
@@ -334,11 +327,11 @@ function processDrag(cube, dragDelta, faceNormal, intersectionPoint) {
     referenceVector.normalize();
 
     //Usa el producto cruz para determinar la dirección de rotación
-    //cross(reference, dragProjected) nos da la orientación
+    //cross(reference, dragProjected) da la orientación
     const cross = new THREE.Vector3();
     cross.crossVectors(referenceVector, dragProjected);
 
-    //El signo del producto punto con el eje de rotación nos indica la dirección
+    //El signo del producto punto con el eje de rotación indica la dirección
     const rotationSign = cross.dot(rotationAxisVector);
     const clockwise = rotationSign < 0;
 
