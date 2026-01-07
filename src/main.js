@@ -200,8 +200,8 @@ function getEventCoordinates(event) {
 //Previene el scroll y otros comportamientos táctiles cuando se hace drag táctil
 function onTouchMove(event) {
     if (isDragging) {
+        event.stopImmediatePropagation();
         event.preventDefault();
-        event.stopPropagation();
     }
 }
 
@@ -230,9 +230,9 @@ function onMouseDown(event) {
 
     //Guarda el primer elemento, en este caso un cubito, con el que intersecta el rayo
     if (intersects.length > 0) {
-        //Previene el comportamiento por defecto y detiene la propagación para que OrbitControls no capture el evento
+        //Detiene INMEDIATAMENTE la propagación para que OrbitControls no capture el evento
+        event.stopImmediatePropagation();
         event.preventDefault();
-        event.stopPropagation();
 
         const intersection = intersects[0];
         dragStartCube = intersection.object;
@@ -262,8 +262,8 @@ function onMouseUp(event) {
     }
 
     //Previene comportamiento por defecto en eventos táctiles
+    event.stopImmediatePropagation();
     event.preventDefault();
-    event.stopPropagation();
 
     //Calcula la posición final del ratón cuando se suelta (después de un drag por ejemplo) en coordenadas normalizadas del dispositivo.
     const coords = getEventCoordinates(event);
