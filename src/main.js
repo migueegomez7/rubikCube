@@ -61,15 +61,23 @@ function crearEscena() {
     //Crea el controlador de la cámara que permite girar la cámara alrededor del cubo en tres dimensiones y lo añade a la escena
     controlador_camara = new OrbitControls(camara, renderer.domElement);
     controlador_camara.target.set(0, 0, 0);
+    //Configura OrbitControls para que solo responda a dos toques (pellizcar y rotar con dos dedos)
+    controlador_camara.touches = {
+        ONE: -1,  // Desactiva rotación con un solo dedo
+        TWO: THREE.TOUCH.DOLLY_PAN  // Mantiene pellizcar y pan con dos dedos
+    };
 
     //Crea el raycaster que permite detectar colisiones y lo añade a la escena
     raycaster = new THREE.Raycaster();
     mouse = new THREE.Vector2();
 
-    //Crea los vent listeners para que cuando se presiona una tecla, cuando se hace clic con el ratón, cuando se mueve el ratón y cuando se suelta el ratón se llame a las funciones correspondientes
+    //Crea los event listeners para mouse, teclado y eventos táctiles
     document.addEventListener('keydown', onKeyDown);
     renderer.domElement.addEventListener('mousedown', onMouseDown);
     renderer.domElement.addEventListener('mouseup', onMouseUp);
+    renderer.domElement.addEventListener('touchstart', onMouseDown, { passive: false });
+    renderer.domElement.addEventListener('touchend', onMouseUp, { passive: false });
+    renderer.domElement.addEventListener('touchmove', onTouchMove, { passive: false });
 
     //Crea el panel de instrucciones sobre como girar el cubo
     createControlPanel();
@@ -179,6 +187,28 @@ function addTextureToCenterCube(cube, x, y, z) {
     );
 }
 
+//Función auxiliar para obtener coordenadas de eventos de ratón o táctiles
+function getEventCoordinates(event) {
+    if (event.touches && event.touches.length > 0) {
+        return {
+            clientX: event.touches[0].clientX,
+            clientY: event.touches[0].clientY
+        };
+    }
+    return {
+        clientX: event.clientX,
+        clientY: event.clientY
+    };
+}
+
+//Previene el scroll y otros comportamientos táctiles cuando se hace drag táctil
+function onTouchMove(event) {
+    if (isDragging) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+}
+
 function onMouseDown(event) {
     if (isRotating) return;  //Evita iniciar otro giro mientras ya se está girando una capa
 
@@ -186,9 +216,10 @@ function onMouseDown(event) {
     //Navegador (píxeles) vs Three.js (NDC):
     //Navegador: (0,0) está arriba a la izquierda, Y crece hacia abajo
     //Three.js: (-1,1) está arriba a la izquierda, (1,-1) abajo a la derecha, (0,0) en el centro
+    const coords = getEventCoordinates(event);
     const rect = renderer.domElement.getBoundingClientRect();
-    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    mouse.x = ((coords.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((coords.clientY - rect.top) / rect.height) * 2 + 1;
 
     //Actualiza el raycaster (Prepara un rayo láser invisible desde la cámara hacia donde está el ratón en la escena 3D)
     raycaster.setFromCamera(mouse, camara);
@@ -198,6 +229,10 @@ function onMouseDown(event) {
 
     //Guarda el primer elemento, en este caso un cubito, con el que intersecta el rayo
     if (intersects.length > 0) {
+        //Previene el comportamiento por defecto y detiene la propagación para que OrbitControls no capture el evento
+        event.preventDefault();
+        event.stopPropagation();
+
         const intersection = intersects[0];
         dragStartCube = intersection.object;
         dragStartPoint.set(mouse.x, mouse.y);
@@ -225,10 +260,15 @@ function onMouseUp(event) {
         return;
     }
 
+    //Previene comportamiento por defecto en eventos táctiles
+    event.preventDefault();
+    event.stopPropagation();
+
     //Calcula la posición final del ratón cuando se suelta (después de un drag por ejemplo) en coordenadas normalizadas del dispositivo.
+    const coords = getEventCoordinates(event);
     const rect = renderer.domElement.getBoundingClientRect();
-    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    mouse.x = ((coords.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((coords.clientY - rect.top) / rect.height) * 2 + 1;
 
     //Calcula el vector de arrastre (delta)
     const dragDelta = new THREE.Vector2(
@@ -497,29 +537,67 @@ function gameLoop() {
 }
 
 function createControlPanel() {
+    const isMobile = window.innerWidth <= 768;
+
     const controlPanel = document.createElement('div');
+    controlPanel.id = 'controlPanel';
     controlPanel.style.cssText = `
         position: fixed;
-        top: 20px;
+        top: ${isMobile ? 'auto' : '20px'};
+        bottom: ${isMobile ? '20px' : 'auto'};
         left: 20px;
         background: rgba(0, 0, 0, 0.8);
         color: white;
-        padding: 20px;
+        padding: ${isMobile ? '15px' : '20px'};
         border-radius: 12px;
         font-family: 'Arial', sans-serif;
-        font-size: 14px;
+        font-size: ${isMobile ? '12px' : '14px'};
         line-height: 1.6;
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         backdrop-filter: blur(10px);
         border: 1px solid rgba(255, 255, 255, 0.1);
         z-index: 1000;
-        min-width: 280px;
+        min-width: ${isMobile ? '200px' : '280px'};
+        max-width: ${isMobile ? 'calc(100vw - 40px)' : '320px'};
         user-select: none;
+        transition: all 0.3s ease;
     `;
 
+    //Botón de colapsar/expandir
+    const toggleButton = document.createElement('div');
+    toggleButton.style.cssText = `
+        display: ${isMobile ? 'flex' : 'none'};
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+        padding: 5px 0;
+        margin-bottom: 10px;
+        border-bottom: 2px solid #4ade80;
+    `;
+
+    const toggleTitle = document.createElement('span');
+    toggleTitle.textContent = '📱 Controles';
+    toggleTitle.style.cssText = `
+        color: #4ade80;
+        font-weight: bold;
+        font-size: 14px;
+    `;
+
+    const toggleIcon = document.createElement('span');
+    toggleIcon.textContent = '▼';
+    toggleIcon.style.cssText = `
+        color: #4ade80;
+        font-size: 12px;
+        transition: transform 0.3s ease;
+    `;
+
+    toggleButton.appendChild(toggleTitle);
+    toggleButton.appendChild(toggleIcon);
+
     const title = document.createElement('h3');
-    title.innerHTML = '<img src="assets/favicon_Cubo_Rubik.png" alt="Rubik" style="width:64px;height:64px;margin-right:10px;vertical-align:middle;border-radius:3px;"> Controles del Cubo de Rubik';
+    title.innerHTML = `<img src="assets/favicon_Cubo_Rubik.png" alt="Rubik" style="width:${isMobile ? '48px' : '64px'};height:${isMobile ? '48px' : '64px'};margin-right:10px;vertical-align:middle;border-radius:3px;"> Controles del Cubo de Rubik`;
     title.style.cssText = `
+        display: ${isMobile ? 'none' : 'block'};
         margin: 0 0 15px 0;
         color: #4ade80;
         font-size: 18px;
@@ -529,30 +607,52 @@ function createControlPanel() {
     `;
 
     const controlsContent = document.createElement('div');
+    controlsContent.id = 'controlsContent';
     controlsContent.innerHTML = `
         <div style="margin-bottom: 15px;">
-            <strong style="color: #60a5fa;">🖱️ Controles del Ratón:</strong>
             <div style="margin-left: 10px; margin-top: 8px;">
-                <div><span style="color: #a78bfa;">Clic y Arrastrar</span> - Rotar capa</div>
-                <div><span style="color: #a78bfa;">Clic Derecho y Arrastrar</span> - Orbitar cámara</div>
-                <div><span style="color: #a78bfa;">Rueda del ratón</span> - Acercar/Alejar</div>
+                <div><span style="color: #a78bfa;">${isMobile ? 'Tocar y Arrastrar' : 'Clic y Arrastrar'}</span> - Rotar capa</div>
+                <div><span style="color: #a78bfa;">${isMobile ? 'Dos dedos y Arrastrar' : 'Clic Derecho y Arrastrar'}</span> - Orbitar cámara</div>
+                <div><span style="color: #a78bfa;">${isMobile ? 'Pellizcar' : 'Rueda del ratón'}</span> - Acercar/Alejar</div>
             </div>
         </div>
         
-        <div style="margin-bottom: 15px;">
+        <div style="margin-bottom: 15px; display: ${isMobile ? 'none' : 'block'};">
             <strong style="color: #60a5fa;">⌨️ Controles del Teclado:</strong>
             <div style="margin-left: 10px; margin-top: 8px;">
                 <div><span style="color: #ff6b6b;">U/D/L/R/F/B</span> - Rotar capas</div>
                 <div><span style="color: #ffb347;">Shift + Tecla</span> - Sentido antihorario</div>
             </div>
         </div>
-        
-        <div style="text-align: center; margin-top: 15px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.2);">
-            <small style="color: #9ca3af;">¡Arrastra cualquier cubo para rotar su capa!</small>
-        </div>
     `;
 
-    controlPanel.appendChild(title);
+    //Estado inicial en móvil: colapsado
+    if (isMobile) {
+        controlsContent.style.display = 'none';
+        toggleIcon.style.transform = 'rotate(-90deg)';
+    }
+
+    //Evento para colapsar/expandir
+    toggleButton.addEventListener('click', function () {
+        const isCollapsed = controlsContent.style.display === 'none';
+        controlsContent.style.display = isCollapsed ? 'block' : 'none';
+        toggleIcon.style.transform = isCollapsed ? 'rotate(0deg)' : 'rotate(-90deg)';
+    });
+
+    if (isMobile) {
+        controlPanel.appendChild(toggleButton);
+    } else {
+        controlPanel.appendChild(title);
+    }
     controlPanel.appendChild(controlsContent);
     document.body.appendChild(controlPanel);
+
+    //Adaptar al cambiar el tamaño de la ventana
+    window.addEventListener('resize', function () {
+        const nowMobile = window.innerWidth <= 768;
+        if (nowMobile !== isMobile) {
+            document.body.removeChild(controlPanel);
+            createControlPanel();
+        }
+    });
 }
