@@ -70,9 +70,10 @@ function crearEscena() {
     document.addEventListener('keydown', onKeyDown);
     renderer.domElement.addEventListener('mousedown', onMouseDown);
     renderer.domElement.addEventListener('mouseup', onMouseUp);
-    renderer.domElement.addEventListener('touchstart', onMouseDown, { passive: false });
-    renderer.domElement.addEventListener('touchend', onMouseUp, { passive: false });
-    renderer.domElement.addEventListener('touchmove', onTouchMove, { passive: false });
+    //Los eventos táctiles usan capture: true para ejecutarse antes que OrbitControls
+    renderer.domElement.addEventListener('touchstart', onMouseDown, { capture: true, passive: false });
+    renderer.domElement.addEventListener('touchend', onMouseUp, { capture: true, passive: false });
+    renderer.domElement.addEventListener('touchmove', onTouchMove, { capture: true, passive: false });
 
     //Crea el panel de instrucciones sobre como girar el cubo
     createControlPanel();
@@ -611,8 +612,8 @@ function createControlPanel() {
     controlsContent.innerHTML = `
         <div style="margin-bottom: 15px;">
             <div style="margin-left: 10px; margin-top: 8px;">
-                <div><span style="color: #a78bfa;">${isMobile ? '1 dedo en cubo' : 'Clic y Arrastrar'}</span> - Rotar capa</div>
-                <div><span style="color: #a78bfa;">${isMobile ? '1-2 dedos en fondo' : 'Clic Derecho y Arrastrar'}</span> - Orbitar cámara</div>
+                <div><span style="color: #a78bfa;">${isMobile ? 'Tocar y Arrastrar' : 'Clic y Arrastrar'}</span> - Rotar capa</div>
+                <div><span style="color: #a78bfa;">${isMobile ? 'Dos dedos y Arrastrar' : 'Clic Derecho y Arrastrar'}</span> - Orbitar cámara</div>
                 <div><span style="color: #a78bfa;">${isMobile ? 'Pellizcar' : 'Rueda del ratón'}</span> - Acercar/Alejar</div>
             </div>
         </div>
